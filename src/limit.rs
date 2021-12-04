@@ -39,6 +39,10 @@ impl<T> CountedLimit<T> {
         CountedLimit { offset, ..self }
     }
 
+    pub fn limit(self, limit: i64) -> Self {
+        CountedLimit { limit, ..self }
+    }
+
     pub fn load_with_total<U>(self, conn: &PgConnection) -> QueryResult<CountedLimitResult<U>>
     where
         Self: LoadQuery<PgConnection, (U, i64)>,
@@ -57,11 +61,11 @@ impl<T> CountedLimit<T> {
 }
 
 pub trait CountingLimit: AsQuery + Sized {
-    fn counted_limit(self, limit: i64) -> CountedLimit<Self::Query> {
+    fn counted_limit(self, limit: i64, offset: i64) -> CountedLimit<Self::Query> {
         CountedLimit {
             query: self.as_query(),
             limit,
-            offset: 0,
+            offset,
         }
     }
 }
