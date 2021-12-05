@@ -7,13 +7,13 @@ use diesel::{PgConnection, QueryResult, RunQueryDsl};
 // https://diesel.rs/guides/extending-diesel/
 
 #[derive(QueryId)]
-pub struct CountedLimit<T> {
+pub struct CountedLimitQuery<T> {
     query: T,
     limit: i64,
     offset: i64,
 }
 
-impl<T> QueryFragment<Pg> for CountedLimit<T>
+impl<T> QueryFragment<Pg> for CountedLimitQuery<T>
 where
     T: QueryFragment<Pg>,
 {
@@ -28,19 +28,19 @@ where
     }
 }
 
-impl<T: Query> Query for CountedLimit<T> {
+impl<T: Query> Query for CountedLimitQuery<T> {
     type SqlType = (T::SqlType, BigInt);
 }
 
-impl<T> RunQueryDsl<PgConnection> for CountedLimit<T> {}
+impl<T> RunQueryDsl<PgConnection> for CountedLimitQuery<T> {}
 
-impl<T> CountedLimit<T> {
+impl<T> CountedLimitQuery<T> {
     pub fn offset(self, offset: i64) -> Self {
-        CountedLimit { offset, ..self }
+        CountedLimitQuery { offset, ..self }
     }
 
     pub fn limit(self, limit: i64) -> Self {
-        CountedLimit { limit, ..self }
+        CountedLimitQuery { limit, ..self }
     }
 
     pub fn load_with_total<U>(self, conn: &PgConnection) -> QueryResult<CountedLimitResult<U>>
@@ -60,9 +60,9 @@ impl<T> CountedLimit<T> {
     }
 }
 
-pub trait CountingLimit: AsQuery + Sized {
-    fn counted_limit(self, limit: i64, offset: i64) -> CountedLimit<Self::Query> {
-        CountedLimit {
+pub trait CountedLimitDsl: AsQuery + Sized {
+    fn counted_limit(self, limit: i64, offset: i64) -> CountedLimitQuery<Self::Query> {
+        CountedLimitQuery {
             query: self.as_query(),
             limit,
             offset,
@@ -70,7 +70,7 @@ pub trait CountingLimit: AsQuery + Sized {
     }
 }
 
-impl<T: AsQuery> CountingLimit for T {}
+impl<T: AsQuery> CountedLimitDsl for T {}
 
 #[derive(Debug)]
 pub struct CountedLimitResult<T> {
