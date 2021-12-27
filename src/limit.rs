@@ -9,8 +9,8 @@ use diesel::{PgConnection, QueryResult, RunQueryDsl};
 #[derive(QueryId)]
 pub struct CountedLimitQuery<T> {
     query: T,
-    limit: i64,
-    offset: i64,
+    limit: u32,
+    offset: u32,
 }
 
 impl<T> QueryFragment<Pg> for CountedLimitQuery<T>
@@ -21,9 +21,9 @@ where
         out.push_sql("SELECT *, COUNT(*) OVER () FROM (");
         self.query.walk_ast(out.reborrow())?;
         out.push_sql(") AS x LIMIT ");
-        out.push_bind_param::<BigInt, _>(&self.limit)?;
+        out.push_bind_param::<BigInt, _>(&(self.limit as i64))?;
         out.push_sql(" OFFSET ");
-        out.push_bind_param::<BigInt, _>(&self.offset)?;
+        out.push_bind_param::<BigInt, _>(&(self.offset as i64))?;
         Ok(())
     }
 }
@@ -35,11 +35,11 @@ impl<T: Query> Query for CountedLimitQuery<T> {
 impl<T> RunQueryDsl<PgConnection> for CountedLimitQuery<T> {}
 
 impl<T> CountedLimitQuery<T> {
-    pub fn offset(self, offset: i64) -> Self {
+    pub fn offset(self, offset: u32) -> Self {
         CountedLimitQuery { offset, ..self }
     }
 
-    pub fn limit(self, limit: i64) -> Self {
+    pub fn limit(self, limit: u32) -> Self {
         CountedLimitQuery { limit, ..self }
     }
 
@@ -61,11 +61,11 @@ impl<T> CountedLimitQuery<T> {
 }
 
 pub trait CountedLimitDsl: AsQuery + Sized {
-    fn counted_limit(self, limit: i64, offset: i64) -> CountedLimitQuery<Self::Query> {
+    fn counted_limit(self, limit: u32) -> CountedLimitQuery<Self::Query> {
         CountedLimitQuery {
             query: self.as_query(),
             limit,
-            offset,
+            offset: 0,
         }
     }
 }
