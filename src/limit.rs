@@ -1,3 +1,5 @@
+//! Extension for creating a limit & offset query inside a Postgres `COUNT(*) OVER ()`
+//! to get a count of the total rows available.
 use diesel::pg::Pg;
 use diesel::query_builder::{AsQuery, AstPass, Query, QueryFragment};
 use diesel::query_dsl::LoadQuery;
@@ -7,6 +9,18 @@ use diesel::{PgConnection, QueryResult, RunQueryDsl};
 // https://diesel.rs/guides/extending-diesel/
 
 #[derive(QueryId)]
+/// Use to create a Counted Limit & Offset query.
+/// # Examples
+/// ```ignore
+/// use diesel::{PgConnection, QueryResult};
+/// use diesel_postgres::limit::CountedLimitResult;
+/// fn find_all(connection: &PgConnection, limit: u32, offset: u32) -> QueryResult<CountedLimitResult<User>> {
+///     Users::users
+///         .counted_limit(limit)
+///         .offset(offset)
+///         .load_with_total::<User>(connection)
+///  }
+/// ```
 pub struct CountedLimitQuery<T> {
     query: T,
     limit: u32,
